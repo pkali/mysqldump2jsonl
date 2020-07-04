@@ -18,7 +18,7 @@ class Dumper:
 
     def dump(self, filename, data):
         if filename not in self.open_file:
-            close_all()
+            self.close_all()
             f = gzip.open(self.path+filename+'.jsonl.gz', 'wt')
             self.open_file[filename] = f
         else:
@@ -29,7 +29,7 @@ class Dumper:
         # Read line and quit if no more data
         line = f.readline()
         if line == '':
-            close_all()
+            self.close_all()
             sys.exit(0)
         else:
             return line
