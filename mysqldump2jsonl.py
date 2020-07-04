@@ -10,17 +10,29 @@ class Dumper:
         self.path = path
         self.open_file = {}
 
+    def close_all(self)
+        #close previous file(s)
+        for name in self.open_file:
+            self.open_file[name].close()
+        self.open_file = {}
+
     def dump(self, filename, data):
         if filename not in self.open_file:
-            #close previous file(s)
-            for name in self.open_file:
-                self.open_file[name].close()
-            self.open_file = {}
+            close_all()
             f = gzip.open(self.path+filename+'.jsonl.gz', 'wt')
             self.open_file[filename] = f
         else:
             f = self.open_file[filename]
         f.write(data+'\n')
+
+    def readlineq(self, f):
+        # Read line and quit if no more data
+        line = f.readline()
+        if line == '':
+            close_all()
+            sys.exit(0)
+        else:
+            return line
 
 dp = Dumper(sys.argv[2])
 
@@ -40,19 +52,11 @@ def generate_json_line(columns, data, noiter=False):
             jl[columns[i]] = data[i]
     return json.dumps(jl, ensure_ascii=False)
 
-def readlineq(f):
-    # Read line and quit
-    line = f.readline()
-    if line == '':
-        sys.exit(0)
-    else:
-        return line
-
 with gzip.open(sys.argv[1], 'rt') as f:
     # look for the beginning of the table definition
     while True:
         while True:
-            line = readlineq(f)
+            line = dp.readlineq(f)
             if line.startswith('CREATE TABLE'): break  #untill
 
         table = line.split('`')[1] # name of the table
@@ -60,14 +64,14 @@ with gzip.open(sys.argv[1], 'rt') as f:
         # get names and types of columns
         columns = []
         while True:
-            line = readlineq(f)
+            line = dp.readlineq(f)
             if line.startswith('  `'):
                 columns.append(line.split('`')[1]) # = line.split('`')[2].split(' ')[1]
             else: break
 
         # look for the beginning of the data
         while True:
-            line = readlineq(f)
+            line = dp.readlineq(f)
             if line.startswith('INSERT INTO'): break
         while line.startswith('INSERT INTO'):
             if line.split('`')[1] == table: # check if the INSERT is for the correct table
@@ -77,4 +81,4 @@ with gzip.open(sys.argv[1], 'rt') as f:
                 else:
                     for i in data:
                         dp.dump(table, generate_json_line(columns, i))
-            line = readlineq(f)
+            line = dp.readlineq(f)
