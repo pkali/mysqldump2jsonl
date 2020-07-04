@@ -10,7 +10,7 @@ class Dumper:
         self.path = path
         self.open_file = {}
 
-    def close_all(self)
+    def close_all(self):
         #close previous file(s)
         for name in self.open_file:
             self.open_file[name].close()
