@@ -21,7 +21,7 @@ class Dumper:
         else:
             f = self.open_file[filename]
         f.write(data+'\n')
-        
+
 dp = Dumper(sys.argv[2])
 
 def get_value_tuples(line):
@@ -31,44 +31,50 @@ def get_value_tuples(line):
 
     return ast.literal_eval(values)
 
-def generate_json_line(columns, data):
+def generate_json_line(columns, data, noiter=False):
     jl = {}
-    if isinstance(data, str) or isinstance(data, int):
+    if noiter:
         jl[columns[0]] = data
     else:
         for i in range(len(columns)):
             jl[columns[i]] = data[i]
     return json.dumps(jl, ensure_ascii=False)
 
+def readlineq(f):
+    # Read line and quit
+    line = f.readline()
+    if line == '':
+        sys.exit(0)
+    else:
+        return line
+
 with gzip.open(sys.argv[1], 'rt') as f:
     # look for the beginning of the table definition
     while True:
         while True:
-            line = f.readline()
+            line = readlineq(f)
             if line.startswith('CREATE TABLE'): break  #untill
-            
+
         table = line.split('`')[1] # name of the table
-        
+
         # get names and types of columns
         columns = []
         while True:
-            line = f.readline()
+            line = readlineq(f)
             if line.startswith('  `'):
-                columns.append(line.split('`')[1]) # = line.split('`')[2].split(' ')[1] 
+                columns.append(line.split('`')[1]) # = line.split('`')[2].split(' ')[1]
             else: break
-        
+
         # look for the beginning of the data
         while True:
-            line = f.readline()
+            line = readlineq(f)
             if line.startswith('INSERT INTO'): break
         while line.startswith('INSERT INTO'):
             if line.split('`')[1] == table: # check if the INSERT is for the correct table
                 data = get_value_tuples(line)
-                if isinstance(data, str) or isinstance(data, int):
-                    dp.dump(table, generate_json_line(columns, data))
+                if isinstance(data, str) or isinstance(data, int) or isinstance(data, float):
+                    dp.dump(table, generate_json_line(columns, data, noiter=True))
                 else:
                     for i in data:
                         dp.dump(table, generate_json_line(columns, i))
-            line = f.readline()
-        
-    
+            line = readlineq(f)
