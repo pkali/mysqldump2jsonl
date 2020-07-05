@@ -77,6 +77,7 @@ with gzip.open(sys.argv[1], 'rt') as f:
             if line.split('`')[1] == table: # check if the INSERT is for the correct table
                 data = get_value_tuples(line)
                 if isinstance(data, str) or isinstance(data, int) or isinstance(data, float):
+                    # Case of a table with a single value
                     dp.dump(table, generate_json_line(columns, data, noiter=True))
                 else:
                     for i in data:
